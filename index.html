@@ -55,6 +55,9 @@ form h2{margin:0 0 6px;font-size:19px}
 .f{display:block;font-size:14px;color:var(--sub);margin:12px 0 4px}
 .in{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);font-size:16px}
 textarea.in{min-height:64px;resize:vertical}
+.pubrow{display:flex;gap:8px}.pubrow .in{flex:1}
+.jwbtn{flex:none;display:grid;place-items:center;width:76px;border-radius:10px;background:var(--priBg);color:var(--priInk);font-size:12px;font-weight:700;line-height:1.25;text-align:center;text-decoration:none}
+.hint{margin:4px 0 0;font-size:13px;color:var(--sub)}
 .pub{margin:6px 0 0;font-size:14px;color:var(--sub)}.pub b{color:var(--ink);font-weight:600}
 .step{display:flex;align-items:center;gap:8px}
 .step button{width:46px;height:46px;border-radius:10px;border:1px solid var(--line);background:var(--bg);font-size:22px;cursor:pointer}
@@ -144,7 +147,12 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px soli
     <label class="f" for="memo">메모</label>
     <textarea class="in" id="memo" rows="2" placeholder="대화 내용, 다음에 할 이야기 등"></textarea>
     <label class="f" for="pub">전한 출판물</label>
-    <input class="in" id="pub" autocomplete="off" placeholder="예) 파수대 2026년 11월호">
+    <div class="pubrow">
+      <input class="in" id="pub" list="pubList" autocomplete="off" placeholder="예) 파수대 2026년 11월호">
+      <a class="jwbtn" id="jwLink" href="https://wol.jw.org/ko/wol/h/r8/lp-ko" target="_blank" rel="noopener">jw.org<br>검색 ↗</a>
+    </div>
+    <datalist id="pubList"></datalist>
+    <p class="hint">글자를 넣으면 전에 쓴 출판물이 아래에 떠요. ‘jw.org 검색’은 입력한 말로 온라인 라이브러리를 열어요.</p>
     <span class="f">사진</span>
     <div class="pick" id="pick">
       <label class="addp">＋<br>사진<input id="file" type="file" accept="image/*" multiple class="sr"></label>
@@ -328,6 +336,11 @@ function openForm(v,again){
   $('first').value=v?(v.first||v.date||today()):today();
   $('memo').value=v?.memo||'';
   $('pub').value=v?.pub||'';
+  // 전에 쓴 출판물을 자주 쓴 순서로 추천 + 기본 목록
+  const cnt={};items.forEach(x=>{if(x.pub)cnt[x.pub]=(cnt[x.pub]||0)+1});
+  const sug=[...Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a]),...['파수대','깨어라!','전도지','초대장','성경','동영상']];
+  $('pubList').innerHTML=[...new Set(sug)].map(t=>`<option value="${esc(t)}">`).join('');
+  jwHref();
   photos=[...(v?.photos||[])];
   drawPick();$('dlg').showModal();
 }
@@ -339,6 +352,9 @@ function drawPick(){
     d.querySelector('button').onclick=()=>{photos.splice(i,1);drawPick()};
     $('pick').insertBefore(d,add)});
 }
+function jwHref(){const q=$('pub').value.trim();
+  $('jwLink').href=q?`https://wol.jw.org/ko/wol/s/r8/lp-ko?q=${encodeURIComponent(q)}`:'https://wol.jw.org/ko/wol/h/r8/lp-ko'}
+$('pub').oninput=jwHref;
 $('file').onchange=async e=>{for(const f of e.target.files){const p=await shrink(f);if(p)photos.push(p)}e.target.value='';drawPick()};
 $('minus').onclick=()=>$('num').value=Math.max(1,(+$('num').value||1)-1);
 $('plus').onclick=()=>$('num').value=(+$('num').value||0)+1;
